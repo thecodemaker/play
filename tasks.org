@@ -1,0 +1,13 @@
+
+* Tasks
+** TODO - ENVIRONMENTS-1 - create a box from scratch
+    *Descrition*: Create a box from scratch.
+    *Solution*: created a box based on Ubuntu 16.04 server over which I installed the ubuntu desktop. This is started using
+               vagrant.
+   CLOSED 06.18.2017
+
+** TODO - ENVIRONMENTS-2 - optimize the box creating process
+    *Description*: We are the ubuntu 16.04 server installation over which we install ubuntu desktop 16.04. This will take
+          more time in the build process. Ideally we want for the correct .iso to be used from beginning. The solution
+          from now is a workaround to solve some problems ubuntu 16.04 has in the installation process. Now it takes 20
+          minutes to create a box and 10 minutes to create the virtualbox machine (depends on network speed).

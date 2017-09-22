@@ -1,0 +1,67 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.require_version ">= 1.8.0"
+
+### Virtual Machines Configuration
+VIRTUAL_MACHINES = {
+    play: {
+        hostname: "play-development",
+        cpus: 4,
+        memory: 16384,
+        private_ip: "192.168.100.50",
+        environment: "Development Setup",
+
+        setup_scripts: [
+            { privileged: true,   path: "./scripts/1.base_setup.sh" },
+            { privileged: true,   path: "./scripts/2.install-java-8-and-9.sh" },
+            { privileged: true,   path: "./scripts/3.install-chrome.sh" },
+            { privileged: true,   path: "./scripts/4.install-docker.sh" },
+            { privileged: true,   path: "./scripts/5.install-intellij-ultimate.sh" },
+            { privileged: true,   path: "./scripts/6.install-maven.sh" },
+            { privileged: true,   path: "./scripts/7.install-nodejs-8-with-dependencies.sh" }
+        ]
+    }
+}.freeze
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "file://../builds/virtualbox-ubuntu1604.box"
+  config.ssh.forward_agent = true
+
+  VIRTUAL_MACHINES.each do |name, current_vm_config|
+    config.vm.define name do |vm_config|
+      vm_config.ssh.forward_agent = true
+
+      # private network between
+      # vm_config.vm.network "private_network", virtualbox__intnet: "intnet"
+      # vm_config.vm.network "private_network", ip: current_vm_config[:private_ip]
+
+      vm_config.vm.hostname = current_vm_config[:hostname]
+      vm_config.vm.synced_folder "/shared/#{name}", "/home/vagrant", create: true
+
+       vm_config.vm.provider "virtualbox" do |v|
+         v.name = current_vm_config[:hostname]
+         v.customize ["modifyvm", :id, "--memory", "16384"]
+         v.customize ["modifyvm", :id, "--cpus", "4" ]
+         v.customize ["modifyvm", :id, "--vram", "32"]
+         v.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+         v.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
+         v.customize ["modifyvm", :id, "--paravirtprovider", "default"]
+         v.customize ["modifyvm", :id, "--ioapic", "on"]
+         v.customize ["modifyvm", :id, "--hwvirtex", "on"]
+         v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+       end
+
+      # provision with Setup scripts
+      current_vm_config[:setup_scripts].each do |script|
+        vm_config.vm.provision "shell", path: script[:path], privileged: script[:privileged]
+      end
+
+      if current_vm_config[:forwarded_ports]
+        current_vm_config[:forwarded_ports].each do |port|
+          vm_config.vm.network "forwarded_port", guest: port[:guest], host: port[:host]
+        end
+      end
+    end
+  end
+end
